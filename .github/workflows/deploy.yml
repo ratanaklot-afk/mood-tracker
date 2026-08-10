@@ -76,7 +76,7 @@ jobs:
               --restart unless-stopped \
               --memory="256m" \
               --cpus="0.5" \
-              -p 8080:80 \
+              -p 8082:80 \
               $FRONTEND_IMAGE
 
             docker image prune -f
