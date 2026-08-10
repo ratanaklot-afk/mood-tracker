@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Mood Check-in</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background: #f0f2f5; 
+      padding-top: 60px; 
+      overflow-x: hidden;
+    }
+    
+    .container { 
+      display: flex; 
+      justify-content: center; 
+      gap: 30px; 
+      margin-top: 30px; 
+      position: relative;
+      min-height: 200px;
+    }
+
+    .box { 
+      background: white; 
+      padding: 40px; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+      width: 120px; 
+      transition: transform 0.15s ease, left 0.2s ease, top 0.2s ease; 
+      user-select: none;
+    }
+
+    .box:hover { 
+      transform: scale(1.1); 
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    #sad-box {
+      position: relative;
+    }
+
+    .emoji { font-size: 50px; }
+
+    #response-container {
+      margin-top: 40px;
+      display: none;
+      animation: popIn 0.5s ease-out forwards;
+    }
+
+    .fun-text {
+      font-size: 28px;
+      font-weight: bold;
+      color: #27ae60;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .logout-btn { 
+      position: absolute; 
+      top: 20px; 
+      right: 20px; 
+      padding: 8px 16px; 
+      background: #dc3545; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+    }
+
+    /* Message Animation */
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Floating Emojis */
+    .floating-emoji {
+      position: fixed;
+      font-size: 32px;
+      user-select: none;
+      pointer-events: none;
+      animation: floatUp 2s linear forwards;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <h2 id="welcome">How are you feeling today?</h2>
+
+  <div class="container" id="box-container">
+    <!-- Happy Box -->
+    <div class="box" onclick="selectHappyMood()">
+      <div class="emoji">😄</div>
+      <p>Happy</p>
+    </div>
+
+    <!-- Sad Box (Unclickable / Dodges Cursor) -->
+    <div class="box" id="sad-box" onmouseover="dodgeSadFace()" onclick="dodgeSadFace()">
+      <div class="emoji">😢</div>
+      <p>Sad</p>
+    </div>
+  </div>
+
+  <div id="response-container">
+    <div class="fun-text" id="response-msg"></div>
+  </div>
+
+  <script>
+    const API_URL = "http://217.216.110.0:8081/api";
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+
+    if (!userId) {
+      window.location.href = 'login.html';
+    } else {
+      document.getElementById('welcome').innerText = `Hello ${username}, how are you feeling today?`;
+    }
+
+    // Function to make the sad box dodge the cursor
+    function dodgeSadFace() {
+      const box = document.getElementById('sad-box');
+      box.style.position = 'fixed';
+
+      // Calculate random coordinates away from cursor
+      const maxX = window.innerWidth - 180;
+      const maxY = window.innerHeight - 180;
+
+      const randomX = Math.max(20, Math.floor(Math.random() * maxX));
+      const randomY = Math.max(20, Math.floor(Math.random() * maxY));
+
+      box.style.left = `${randomX}px`;
+      box.style.top = `${randomY}px`;
+    }
+
+    // Happy Mood Submission
+    async function selectHappyMood() {
+      try {
+        const res = await fetch(`${API_URL}/mood`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, mood: 'happy' })
+        });
+
+        if (res.ok) {
+          document.getElementById('box-container').style.display = 'none';
+          
+          const responseContainer = document.getElementById('response-container');
+          const msgDiv = document.getElementById('response-msg');
+          
+          responseContainer.style.display = 'block';
+          msgDiv.innerText = "I know you are happy today haha 😄🎉";
+          
+          triggerFunAnimation();
+        }
+      } catch (err) {
+        alert("Failed to submit mood to backend.");
+      }
+    }
+
+    // Floating Emoji Burst
+    function triggerFunAnimation() {
+      const emojis = ['😄', '🎉', '✨', '🎈', '🥳', '⭐'];
+      for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.className = 'floating-emoji';
+          el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+          el.style.left = Math.random() * 100 + 'vw';
+          el.style.bottom = '-50px';
+          document.body.appendChild(el);
+
+          setTimeout(() => el.remove(), 2000);
+        }, i * 80);
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

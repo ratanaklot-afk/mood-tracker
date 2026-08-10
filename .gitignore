@@ -1,0 +1,17 @@
+# Ignore Node modules
+node_modules/
+back_end/node_modules/
+front_end/node_modules/
+
+# Ignore SQLite databases (so local test data isn't pushed)
+*.db
+*.sqlite
+back_end/moods.db
+
+# Ignore logs & OS files
+*.log
+.DS_Store
+.vscode/
+
+# Ignore environment variable files
+.env
