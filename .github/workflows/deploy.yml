@@ -1,0 +1,82 @@
+name: Deploy Ratanak Mood Tracker
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./back_end
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-backend:latest
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./front_end
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-frontend:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Containers to Ubuntu Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            BACKEND_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-backend:latest"
+            FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-frontend:latest"
+
+            docker stop ratanak-frontend ratanak-backend || true
+            docker rm ratanak-frontend ratanak-backend || true
+
+            docker pull $BACKEND_IMAGE
+            docker pull $FRONTEND_IMAGE
+
+            docker run -d \
+              --name ratanak-backend \
+              --network ratanak-network \
+              --restart unless-stopped \
+              --memory="256m" \
+              --cpus="0.5" \
+              -p 8081:5000 \
+              $BACKEND_IMAGE
+
+            docker run -d \
+              --name ratanak-frontend \
+              --network ratanak-network \
+              --restart unless-stopped \
+              --memory="256m" \
+              --cpus="0.5" \
+              -p 8080:80 \
+              $FRONTEND_IMAGE
+
+            docker image prune -f
