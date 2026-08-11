@@ -22,8 +22,8 @@
   </div>
 
   <script>
-    // Local backend URL
-    const API_URL = "http://217.216.110.0:8081/api";
+    // Relative backend URL (routed automatically via Traefik)
+    const API_URL = "/api";
 
     async function register() {
       const u = document.getElementById('username').value;
