@@ -64,7 +64,7 @@ jobs:
             docker pull $BACKEND_IMAGE
             docker pull $FRONTEND_IMAGE
 
-            # Backend container routed via Traefik under /api with prefix stripping
+            # Backend container routed via Traefik under /api
             docker run -d \
               --name ratanak-backend \
               --network ratanak-network \
@@ -75,8 +75,6 @@ jobs:
               --label "traefik.http.routers.ratanak-backend.rule=PathPrefix(\`/api\`)" \
               --label "traefik.http.routers.ratanak-backend.entrypoints=web,websecure" \
               --label "traefik.http.routers.ratanak-backend.tls=true" \
-              --label "traefik.http.middlewares.backend-strip.stripprefix.prefixes=/api" \
-              --label "traefik.http.routers.ratanak-backend.middlewares=backend-strip" \
               --label "traefik.http.services.ratanak-backend.loadbalancer.server.port=5000" \
               --label "traefik.http.routers.ratanak-backend.priority=2" \
               $BACKEND_IMAGE
