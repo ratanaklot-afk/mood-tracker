@@ -22,14 +22,13 @@
   </div>
 
   <script>
-  // Relative backend URL
   const API_URL = "/api";
 
   async function login() {
     const u = document.getElementById('username').value;
     const p = document.getElementById('password').value;
 
-    if (!u || !p) return alert("Please enter both username and password.");
+    if (!u || !p) return alert("Please fill in all fields.");
 
     try {
       const res = await fetch(`${API_URL}/login`, {
@@ -41,14 +40,13 @@
       const data = await res.json();
 
       if (res.ok) {
-        // Save auth token or user session if your backend returns one
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        localStorage.setItem('username', u);
+        // Save userId so index.html doesn't redirect back to login
+        localStorage.setItem('userId', data.userId || data.id);
+        localStorage.setItem('username', data.username || u);
+
         window.location.href = 'index.html';
       } else {
-        alert(data.message || data.error || "Login failed.");
+        alert(data.error || data.message || "Login failed");
       }
     } catch (err) {
       alert("Cannot connect to backend server.");
