@@ -114,13 +114,14 @@
   </div>
 
   <script>
-    const API_URL = "http://217.216.110.0:8081/api";
+    // Relative API endpoint routed automatically via Traefik
+    const API_URL = "/api";
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
 
     if (!userId) {
       window.location.href = 'login.html';
-    } else {
+    } else if (username) {
       document.getElementById('welcome').innerText = `Hello ${username}, how are you feeling today?`;
     }
 
@@ -159,6 +160,8 @@
           msgDiv.innerText = "I know you are happy today haha 😄🎉";
           
           triggerFunAnimation();
+        } else {
+          alert("Failed to submit mood. Please try again.");
         }
       } catch (err) {
         alert("Failed to submit mood to backend.");
