@@ -55,28 +55,43 @@ jobs:
             BACKEND_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-backend:latest"
             FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ github.repository_owner }}/ratanak-frontend:latest"
 
+            docker network create ratanak-network || true
+            docker network connect ratanak-network traefik-traefik-1 || true
+
             docker stop ratanak-frontend ratanak-backend || true
             docker rm ratanak-frontend ratanak-backend || true
 
             docker pull $BACKEND_IMAGE
             docker pull $FRONTEND_IMAGE
 
+            # Backend container routed via Traefik under /api
             docker run -d \
               --name ratanak-backend \
               --network ratanak-network \
               --restart unless-stopped \
               --memory="256m" \
               --cpus="0.5" \
-              -p 8081:5000 \
+              --label "traefik.enable=true" \
+              --label "traefik.http.routers.ratanak-backend.rule=PathPrefix(\`/api\`)" \
+              --label "traefik.http.routers.ratanak-backend.entrypoints=web,websecure" \
+              --label "traefik.http.routers.ratanak-backend.tls=true" \
+              --label "traefik.http.services.ratanak-backend.loadbalancer.server.port=5000" \
+              --label "traefik.http.routers.ratanak-backend.priority=2" \
               $BACKEND_IMAGE
 
+            # Frontend container routed via Traefik under /
             docker run -d \
               --name ratanak-frontend \
               --network ratanak-network \
               --restart unless-stopped \
               --memory="256m" \
               --cpus="0.5" \
-              -p 8082:80 \
+              --label "traefik.enable=true" \
+              --label "traefik.http.routers.ratanak-frontend.rule=PathPrefix(\`/\`)" \
+              --label "traefik.http.routers.ratanak-frontend.entrypoints=web,websecure" \
+              --label "traefik.http.routers.ratanak-frontend.tls=true" \
+              --label "traefik.http.services.ratanak-frontend.loadbalancer.server.port=80" \
+              --label "traefik.http.routers.ratanak-frontend.priority=1" \
               $FRONTEND_IMAGE
 
             docker image prune -f
